@@ -1,6 +1,8 @@
 ## Tic Tac Toe game 
 
-Tic tac toe game created using Claude
+Tic tac toe game created using Claude & Hosted via Vercel
+
+**Live Preview: https://tic-tac-toe-nine-beta-78.vercel.app/**
 
 ---
 
