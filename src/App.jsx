@@ -1,5 +1,3 @@
-import './App.css'
-
 import React, { useState, useEffect } from 'react';
 import { RotateCw, Trophy } from 'lucide-react';
 
@@ -8,27 +6,30 @@ const TicTacToe = () => {
   const [isPlayerNext, setIsPlayerNext] = useState(true);
   const [gameActive, setGameActive] = useState(true);
   const [scores, setScores] = useState({ player: 0, ai: 0, ties: 0 });
+  const [winningCells, setWinningCells] = useState([]);
+  const [gameStatus, setGameStatus] = useState('');
+  const [gameFinished, setGameFinished] = useState(false);
+
+  const lines = [
+    [0, 1, 2], [3, 4, 5], [6, 7, 8],
+    [0, 3, 6], [1, 4, 7], [2, 5, 8],
+    [0, 4, 8], [2, 4, 6]
+  ];
 
   const checkWinner = (squares) => {
-    const lines = [
-      [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
-      [0, 3, 6], [1, 4, 7], [2, 5, 8], // columns
-      [0, 4, 8], [2, 4, 6] // diagonals
-    ];
-
     for (let line of lines) {
       const [a, b, c] = line;
       if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
-        return squares[a];
+        return { winner: squares[a], line };
       }
     }
     return null;
   };
 
   const minimax = (squares, depth, isMaximizing) => {
-    const winner = checkWinner(squares);
-    if (winner === 'O') return 10 - depth;
-    if (winner === 'X') return depth - 10;
+    const result = checkWinner(squares);
+    if (result?.winner === 'O') return 10 - depth;
+    if (result?.winner === 'X') return depth - 10;
     if (!squares.includes('')) return 0;
 
     if (isMaximizing) {
@@ -82,34 +83,41 @@ const TicTacToe = () => {
     setBoard(newBoard);
     setIsPlayerNext(false);
 
-    const winner = checkWinner(newBoard);
-    if (winner || !newBoard.includes('')) {
-      handleGameEnd(winner);
+    const result = checkWinner(newBoard);
+    if (result || !newBoard.includes('')) {
+      handleGameEnd(result);
       return;
     }
 
-    // AI move
     setTimeout(() => {
       const aiMove = getAIMove(newBoard);
       newBoard[aiMove] = 'O';
       setBoard(newBoard);
       setIsPlayerNext(true);
 
-      const finalWinner = checkWinner(newBoard);
-      if (finalWinner || !newBoard.includes('')) {
-        handleGameEnd(finalWinner);
+      const finalResult = checkWinner(newBoard);
+      if (finalResult || !newBoard.includes('')) {
+        handleGameEnd(finalResult);
       }
     }, 300);
   };
 
-  const handleGameEnd = (winner) => {
+  const handleGameEnd = (result) => {
     setGameActive(false);
-    if (winner === 'X') {
-      setScores(prev => ({ ...prev, player: prev.player + 1 }));
-    } else if (winner === 'O') {
-      setScores(prev => ({ ...prev, ai: prev.ai + 1 }));
+    setGameFinished(true);
+
+    if (result) {
+      setWinningCells(result.line);
+      if (result.winner === 'X') {
+        setScores(prev => ({ ...prev, player: prev.player + 1 }));
+        setGameStatus('Player wins!');
+      } else {
+        setScores(prev => ({ ...prev, ai: prev.ai + 1 }));
+        setGameStatus('AI wins!');
+      }
     } else {
       setScores(prev => ({ ...prev, ties: prev.ties + 1 }));
+      setGameStatus("It's a tie!");
     }
   };
 
@@ -117,6 +125,9 @@ const TicTacToe = () => {
     setBoard(Array(9).fill(''));
     setIsPlayerNext(true);
     setGameActive(true);
+    setWinningCells([]);
+    setGameStatus('');
+    setGameFinished(false);
   };
 
   const resetScores = () => {
@@ -124,11 +135,21 @@ const TicTacToe = () => {
     restartGame();
   };
 
+  const getCellStyle = (index) => {
+    const baseStyle = "w-full h-24 bg-white rounded-lg shadow-sm border border-gray-200 text-3xl font-bold flex items-center justify-center hover:bg-gray-50 disabled:opacity-100";
+
+    if (gameFinished && winningCells.includes(index)) {
+      const winner = board[index];
+      return `${baseStyle} ${winner === 'X' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`;
+    }
+
+    return baseStyle;
+  };
+
   return (
     <div className="w-full max-w-md mx-auto p-6 space-y-6">
       <h1 className="text-2xl font-bold text-center mb-6">Tic Tac Toe vs AI</h1>
 
-      {/* Scoreboard */}
       <div className="flex justify-center gap-4 mb-6">
         <div className="px-4 py-2 bg-white rounded-lg shadow-sm">
           <p className="text-sm font-medium">Player: {scores.player}</p>
@@ -141,28 +162,25 @@ const TicTacToe = () => {
         </div>
       </div>
 
-      {/* Next player indicator */}
       <div className="text-center mb-6">
         <h2 className="text-lg font-semibold">
-          Next player: {isPlayerNext ? 'Player (X)' : 'AI (O)'}
+          {gameStatus || `Next player: ${isPlayerNext ? 'Player (X)' : 'AI (O)'}`}
         </h2>
       </div>
 
-      {/* Game board */}
       <div className="grid grid-cols-3 gap-3 mb-6">
         {board.map((cell, index) => (
           <button
             key={index}
             onClick={() => handleClick(index)}
             disabled={!gameActive || !isPlayerNext || cell !== ''}
-            className="w-full h-24 bg-white rounded-lg shadow-sm border border-gray-200 text-3xl font-bold flex items-center justify-center hover:bg-gray-50 disabled:opacity-100"
+            className={getCellStyle(index)}
           >
             {cell}
           </button>
         ))}
       </div>
 
-      {/* Control buttons */}
       <div className="flex justify-center gap-4">
         <button
           onClick={restartGame}
