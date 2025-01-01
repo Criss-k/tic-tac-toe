@@ -1,4 +1,10 @@
-## Running React with Tailwind CSS on [Repl.it](https://replit.com)
+## Tic Tac Toe game 
+
+Tic tac toe game created using Claude
+
+---
+
+### Running React with Tailwind CSS on [Repl.it](https://replit.com)
 
 [React](https://reactjs.org/) is a popular JavaScript library for building user interfaces.
 
